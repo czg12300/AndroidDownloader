@@ -5,6 +5,8 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
+import com.jake.library.utils.DLog;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +46,7 @@ public class DownloadFileOperator {
         downloadFile.modifyAt = createAt;
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
-        long result = getWritableDatabase().insert(DownloadFile.TABLE_NAME, null, cv);
+        long result = db.insert(DownloadFile.TABLE_NAME, null, cv);
         db.endTransaction();
         return result;
     }
@@ -53,8 +55,7 @@ public class DownloadFileOperator {
         long result = 0;
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
-        result = getWritableDatabase().update(DownloadFile.TABLE_NAME, cv, selection,
-                selectionArgs);
+        result = db.update(DownloadFile.TABLE_NAME, cv, selection, selectionArgs);
         db.endTransaction();
         return result;
     }
@@ -69,7 +70,7 @@ public class DownloadFileOperator {
         downloadFile.modifyAt = createAt;
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
-        result = getWritableDatabase().update(DownloadFile.TABLE_NAME, cv, null, null);
+        result = db.update(DownloadFile.TABLE_NAME, cv, null, null);
         db.endTransaction();
         return result;
     }
@@ -94,7 +95,6 @@ public class DownloadFileOperator {
         } finally {
             if (c != null) {
                 c.close();
-                c = null;
             }
         }
         return result;
@@ -109,9 +109,10 @@ public class DownloadFileOperator {
                     null, null, orderby, String.valueOf(limit));
             result = getDownloadFileFromCursor(c);
         } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
             if (c != null) {
                 c.close();
-                c = null;
             }
         }
         return result;
@@ -151,25 +152,20 @@ public class DownloadFileOperator {
     }
 
     public int getCount(String selection, String[] selectionArgs) {
-        String[] projection = {
-                " count(*) "
-        };
+        String[] projection = {" count(*) "};
+        int count = 0;
         Cursor c = null;
         try {
-            c = getReadableDatabase().query(DownloadFile.TABLE_NAME, projection, selection,
-                    selectionArgs, null, null, DownloadFile.DEFAULT_SORT_ORDER);
-        } catch (Exception e) {
-            if (c != null) {
-                c.close();
-                c = null;
-            }
-        }
-        int count = 0;
-        if (c != null) {
+            c = getReadableDatabase().query(DownloadFile.TABLE_NAME, projection, selection, selectionArgs, null, null, DownloadFile.DEFAULT_SORT_ORDER);
             if (c.moveToFirst()) {
                 count = c.getInt(0);
             }
-            c.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (c != null) {
+                c.close();
+            }
         }
         return count;
     }

@@ -5,6 +5,8 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
+import com.jake.library.utils.DownloadUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,19 +46,19 @@ public class DownloadPartOperator {
         downloadPart.modifyAt = createAt;
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
-        long result = getWritableDatabase().insert(DownloadPart.TABLE_NAME, null, cv);
+        long result = db.insert(DownloadPart.TABLE_NAME, null, cv);
         db.endTransaction();
         return result;
     }
 
-    public long insertWithoutTransaction(DownloadPart downloadPart) {
+    public long insertWithoutTransaction(SQLiteDatabase db, DownloadPart downloadPart) {
         ContentValues cv = createContentValues(downloadPart);
         long createAt = System.currentTimeMillis();
         cv.put(DownloadPart.CREATE_AT, createAt);
         cv.put(DownloadPart.MODIFIED_AT, createAt);
         downloadPart.createAt = createAt;
         downloadPart.modifyAt = createAt;
-        long result = getWritableDatabase().insert(DownloadPart.TABLE_NAME, null, cv);
+        long result = db.insert(DownloadPart.TABLE_NAME, null, cv);
         return result;
     }
 
@@ -66,7 +68,7 @@ public class DownloadPartOperator {
             db.beginTransaction();
             for (DownloadPart part : downloadParts) {
                 if (part != null) {
-                    insertWithoutTransaction(part);
+                    insertWithoutTransaction(db, part);
                 }
             }
             db.endTransaction();
@@ -76,8 +78,7 @@ public class DownloadPartOperator {
     public long update(ContentValues cv, String selection, String[] selectionArgs) {
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
-        long result = getWritableDatabase().update(DownloadPart.TABLE_NAME, cv, selection,
-                selectionArgs);
+        long result = db.update(DownloadPart.TABLE_NAME, cv, selection, selectionArgs);
         db.endTransaction();
         return result;
     }
@@ -94,32 +95,29 @@ public class DownloadPartOperator {
         List<DownloadPart> result = null;
         Cursor c = null;
         try {
-            c = getReadableDatabase().query(DownloadPart.TABLE_NAME, null, selection, selectionArgs,
-                    null, null, orderby);
+            c = getReadableDatabase().query(DownloadPart.TABLE_NAME, null, selection, selectionArgs, null, null, orderby);
             result = getDownloadPartFromCursor(c);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             if (c != null) {
                 c.close();
-                c = null;
             }
         }
         return result;
     }
 
-    public List<DownloadPart> query(String selection, String[] selectionArgs, String orderby,
-                                    int limit) {
+    public List<DownloadPart> query(String selection, String[] selectionArgs, String orderby, int limit) {
         List<DownloadPart> result = null;
         Cursor c = null;
         try {
-            c = getReadableDatabase().query(DownloadPart.TABLE_NAME, null, selection, selectionArgs,
-                    null, null, orderby, String.valueOf(limit));
+            c = getReadableDatabase().query(DownloadPart.TABLE_NAME, null, selection, selectionArgs, null, null, orderby, String.valueOf(limit));
             result = getDownloadPartFromCursor(c);
         } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
             if (c != null) {
                 c.close();
-                c = null;
             }
         }
         return result;
@@ -162,23 +160,21 @@ public class DownloadPartOperator {
         String[] projection = {
                 " count(*) "
         };
+        int count = 0;
         Cursor c = null;
         try {
-            c = getReadableDatabase().query(DownloadPart.TABLE_NAME, projection, selection,
-                    selectionArgs, null, null, DownloadPart.DEFAULT_SORT_ORDER);
-        } catch (Exception e) {
-            if (c != null) {
-                c.close();
-                c = null;
-            }
-        }
-        int count = 0;
-        if (c != null) {
+            c = getReadableDatabase().query(DownloadPart.TABLE_NAME, projection, selection, selectionArgs, null, null, DownloadPart.DEFAULT_SORT_ORDER);
             if (c.moveToFirst()) {
                 count = c.getInt(0);
             }
-            c.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (c != null) {
+                c.close();
+            }
         }
+
         return count;
     }
 

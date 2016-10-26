@@ -21,7 +21,7 @@ public class HttpURLConnectionDataFetcher implements IDownloadDataFetcher {
 
     @Override
     public void cleanup() {
-        DownloadUtils.closeIO(stream);
+        DownloadUtils.closeIo(stream);
         if (urlConnection != null) {
             urlConnection.disconnect();
         }
@@ -38,16 +38,16 @@ public class HttpURLConnectionDataFetcher implements IDownloadDataFetcher {
         if (url == null) {
             return null;
         }
-        try {
-            if (url != null && url.toURI().equals(url.toURI())) {
-                throw new IOException("In re-direct loop");
-            }
-        } catch (URISyntaxException e) {
-            // Do nothing, this is best effort.
-        }
+//        try {
+//            if (url.toURI().equals(url.toURI())) {
+//                throw new IOException("In re-direct loop");
+//            }
+//        } catch (URISyntaxException e) {
+//            // Do nothing, this is best effort.
+//        }
         urlConnection = (HttpURLConnection) url.openConnection();
-        urlConnection.setConnectTimeout(2500);
-        urlConnection.setReadTimeout(2500);
+        urlConnection.setConnectTimeout(5000);
+        urlConnection.setReadTimeout(5000);
         urlConnection.setUseCaches(false);
         urlConnection.setRequestProperty("Range", "bytes=" + start + "-" + end);
         urlConnection.setDoInput(true);

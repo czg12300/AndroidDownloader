@@ -19,9 +19,9 @@ public interface DownloadState {
     int FINISH = 0x002;
 
     /**
-     * 暂停
+     * 停止
      */
-    int PAUSE = 0x003;
+    int STOP = 0x003;
     /**
      * 开始
      */

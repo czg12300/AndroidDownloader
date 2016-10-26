@@ -2,12 +2,15 @@
 package com.jake.library;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.text.TextUtils;
 
 import com.jake.library.datafetcher.HttpURLConnectionDataFetcher;
 import com.jake.library.db.DownloadDbHelper;
+import com.jake.library.db.DownloadFileOperator;
 import com.jake.library.filenamegenerator.UrlFileNameGenerator;
 import com.jake.library.job.DownloadJob;
+import com.jake.library.utils.DLog;
 import com.jake.library.utils.DownloadUtils;
 
 import java.util.ArrayList;
@@ -72,16 +75,19 @@ public class Downloader {
         if (!isHttpUrl(url)) {
             return;
         }
+        DLog.d("Downloader download url=" + url);
         final DownloadKey key = DownloadKey.create(url);
         if (isExistInCache(key)) {
-            DownloadJob job = mCacheMap.get(key);
+            DLog.d("Downloader isExistInCache");
+            DownloadJob job = getDownloadJobFromCache(key);
             job.start();
-            mConfiguration.getExecutorService().submit(job);
+            mConfiguration.getExecutorService().execute(job);
             return;
         }
         DownloadJob job = new DownloadJob(key);
         job.start();
-        mConfiguration.getExecutorService().submit(job);
+        DLog.d("Downloader DownloadJob  start");
+        mConfiguration.getExecutorService().execute(job);
         addDownloadJobToCache(key, job);
     }
 
@@ -91,7 +97,7 @@ public class Downloader {
         }
         final DownloadKey key = DownloadKey.create(url);
         if (isExistInCache(key)) {
-            DownloadJob job = mCacheMap.get(key);
+            DownloadJob job = getDownloadJobFromCache(key);
             job.stop();
         }
     }
@@ -120,22 +126,22 @@ public class Downloader {
     }
 
     // 下载文件缓存
-    private ConcurrentHashMap<DownloadKey, DownloadJob> mCacheMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, DownloadJob> mCacheMap = new ConcurrentHashMap<>();
 
     public synchronized void addDownloadJobToCache(DownloadKey key, DownloadJob job) {
         if (key != null) {
-            mCacheMap.put(key, job);
+            mCacheMap.put(key.getKey(), job);
         }
     }
 
     public synchronized void removeDownloadJobFromCache(DownloadKey key) {
         if (key != null) {
-            mCacheMap.remove(key);
+            mCacheMap.remove(key.getKey());
         }
     }
 
     public synchronized DownloadJob getDownloadJobFromCache(DownloadKey key) {
-        return key != null ? mCacheMap.get(key) : null;
+        return key != null ? mCacheMap.get(key.getKey()) : null;
     }
 
     public synchronized boolean isExistInCache(DownloadKey key) {

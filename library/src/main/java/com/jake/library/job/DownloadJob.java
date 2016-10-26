@@ -8,6 +8,7 @@ import android.text.TextUtils;
 import com.jake.library.DownloadConfiguration;
 import com.jake.library.DownloadKey;
 import com.jake.library.DownloadState;
+import com.jake.library.utils.DLog;
 import com.jake.library.utils.DownloadUtils;
 import com.jake.library.Downloader;
 import com.jake.library.IDownloadListener;
@@ -106,7 +107,7 @@ public class DownloadJob extends BaseJob {
                 if (part != null && !part.isFinish()) {
                     DownloadPartJob job = new DownloadPartJob(part);
                     mDownloadPartJobs.add(job);
-                    getDownloadConfiguration().getExecutorService().submit(job);
+                    getDownloadConfiguration().getExecutorService().execute(job);
                 }
             }
         }
@@ -160,10 +161,18 @@ public class DownloadJob extends BaseJob {
             }
         }
         DownloadFile downloadFile = DownloadFileOperator.getInstance().query(mKey.getKey());
-        if (downloadFile != null && downloadFile.isFinish()) {
-            onSuccess(mKey.getUrl(), downloadFile.path);
+        if (isStop()) {
+            onStop(mKey.getUrl());
+            if (downloadFile != null) {
+                downloadFile.state = DownloadState.STOP;
+                DownloadFileOperator.getInstance().update(downloadFile);
+            }
         } else {
-            onFail(mKey.getUrl());
+            if (downloadFile != null && downloadFile.isFinish()) {
+                onSuccess(mKey.getUrl(), downloadFile.path);
+            } else {
+                onFail(mKey.getUrl());
+            }
         }
     }
 
@@ -291,6 +300,7 @@ public class DownloadJob extends BaseJob {
 
 
     private void onFail(final String url) {
+        DLog.d("onFail url=" + url);
         final ArrayList<IDownloadListener> list = Downloader.getInstance().getAllDownloadListener();
         if (list != null && list.size() > 0) {
             mHandler.post(new Runnable() {
@@ -307,6 +317,7 @@ public class DownloadJob extends BaseJob {
     }
 
     private void onProgress(final String url, final long positionSize, final long totalSize) {
+        DLog.d("onProgress url=" + url + " positionSize=" + positionSize + " totalSize=" + totalSize);
         final ArrayList<IDownloadListener> list = Downloader.getInstance().getAllDownloadListener();
         if (list != null && list.size() > 0) {
             mHandler.post(new Runnable() {
@@ -323,6 +334,7 @@ public class DownloadJob extends BaseJob {
     }
 
     private void onSuccess(final String url, final String path) {
+        DLog.d("onSuccess url=" + url + " path=" + path);
         Downloader.getInstance().removeDownloadJobFromCache(mKey);
         final ArrayList<IDownloadListener> list = Downloader.getInstance().getAllDownloadListener();
         if (list != null && list.size() > 0) {
@@ -332,6 +344,25 @@ public class DownloadJob extends BaseJob {
                     for (IDownloadListener listener : list) {
                         if (listener != null) {
                             listener.onSuccess(url, path);
+                        }
+                    }
+                }
+            });
+
+        }
+    }
+
+    private void onStop(final String url) {
+        DLog.d("onStop url=" + url);
+        Downloader.getInstance().removeDownloadJobFromCache(mKey);
+        final ArrayList<IDownloadListener> list = Downloader.getInstance().getAllDownloadListener();
+        if (list != null && list.size() > 0) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    for (IDownloadListener listener : list) {
+                        if (listener != null) {
+                            listener.onStop(url);
                         }
                     }
                 }

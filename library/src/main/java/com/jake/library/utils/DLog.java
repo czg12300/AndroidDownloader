@@ -9,7 +9,7 @@ import android.util.Log;
  * @author jakechen
  * @since 2015/10/23 15:20
  */
-public class LogUtil {
+public class DLog {
     public static void setIsOpenLog(boolean is) {
         isOpenLog = is;
     }

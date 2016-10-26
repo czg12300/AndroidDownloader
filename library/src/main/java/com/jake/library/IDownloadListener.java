@@ -12,7 +12,8 @@ public interface IDownloadListener {
     void onSuccess(String url, String filePath);
 
     void onFail(String url);
-    void onPause(String url);
+
+    void onStop(String url);
 
     void onProgress(String url, long positionSize, long totalSize);
 }

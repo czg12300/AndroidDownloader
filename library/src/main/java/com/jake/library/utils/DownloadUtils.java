@@ -651,7 +651,7 @@ public class DownloadUtils {
      */
     public synchronized static String formatFileNameByUrl(String url) {
         if (url != null && url.contains("/")) {
-            return url.substring(url.lastIndexOf("/"));
+            return url.substring(url.lastIndexOf("/")+1);
         }
         return url;
     }
@@ -663,9 +663,9 @@ public class DownloadUtils {
      */
     public static ExecutorService getDownloadDefaultThreadExecutor() {
         // 线程池核心线程数
-        final int corePoolSize = 5;
+        final int corePoolSize = 100;
         // 线程池最大线程数
-        final int maximumPoolSize = 100;
+        final int maximumPoolSize = 1000;
         // 额外线程空状态生存时间
         final int keepAliveTime = 10000;
         return new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(10), new ThreadFactory() {
@@ -693,7 +693,7 @@ public class DownloadUtils {
      *
      * @param closeable
      */
-    public static void closeIO(Closeable closeable) {
+    public static void closeIo(Closeable closeable) {
         try {
             if (closeable != null) {
                 closeable.close();
