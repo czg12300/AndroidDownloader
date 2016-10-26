@@ -5,8 +5,6 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.jake.library.data.db.BaseDbOperator;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +14,7 @@ import java.util.List;
  * @author jakechen
  * @since 2016/7/22
  */
-public class DownloadFileOperator extends BaseDbOperator<DownloadFile> {
+public class DownloadFileOperator {
     private static DownloadFileOperator mInstance;
 
     public static DownloadFileOperator getInstance() {
@@ -29,17 +27,14 @@ public class DownloadFileOperator extends BaseDbOperator<DownloadFile> {
     private DownloadFileOperator() {
     }
 
-    @Override
     protected SQLiteDatabase getReadableDatabase() {
         return DownloadDbHelper.getInstance().getReadableDatabase();
     }
 
-    @Override
     protected SQLiteDatabase getWritableDatabase() {
         return DownloadDbHelper.getInstance().getWritableDatabase();
     }
 
-    @Override
     public long insert(DownloadFile downloadFile) {
         ContentValues cv = createContentValues(downloadFile);
         long createAt = System.currentTimeMillis();
@@ -54,7 +49,6 @@ public class DownloadFileOperator extends BaseDbOperator<DownloadFile> {
         return result;
     }
 
-    @Override
     public long update(ContentValues cv, String selection, String[] selectionArgs) {
         long result = 0;
         SQLiteDatabase db = getWritableDatabase();
@@ -65,7 +59,21 @@ public class DownloadFileOperator extends BaseDbOperator<DownloadFile> {
         return result;
     }
 
-    @Override
+    public long update(DownloadFile downloadFile) {
+        long result = 0;
+        ContentValues cv = createContentValues(downloadFile);
+        long createAt = System.currentTimeMillis();
+        cv.put(DownloadFile.CREATE_AT, createAt);
+        cv.put(DownloadFile.MODIFIED_AT, createAt);
+        downloadFile.createAt = createAt;
+        downloadFile.modifyAt = createAt;
+        SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        result = getWritableDatabase().update(DownloadFile.TABLE_NAME, cv, null, null);
+        db.endTransaction();
+        return result;
+    }
+
     public long delete(String selection, String[] selectionArgs) {
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
@@ -74,7 +82,6 @@ public class DownloadFileOperator extends BaseDbOperator<DownloadFile> {
         return result;
     }
 
-    @Override
     public List<DownloadFile> query(String selection, String[] selectionArgs, String orderby) {
         List<DownloadFile> result = null;
         Cursor c = null;
@@ -93,7 +100,6 @@ public class DownloadFileOperator extends BaseDbOperator<DownloadFile> {
         return result;
     }
 
-    @Override
     public List<DownloadFile> query(String selection, String[] selectionArgs, String orderby,
                                     int limit) {
         List<DownloadFile> result = null;
@@ -111,7 +117,6 @@ public class DownloadFileOperator extends BaseDbOperator<DownloadFile> {
         return result;
     }
 
-    @Override
     public DownloadFile query(String selection, String[] selectionArgs) {
         List<DownloadFile> files = query(selection, selectionArgs, null);
         if (files != null && files.size() > 0) {
@@ -145,7 +150,6 @@ public class DownloadFileOperator extends BaseDbOperator<DownloadFile> {
         return null;
     }
 
-    @Override
     public int getCount(String selection, String[] selectionArgs) {
         String[] projection = {
                 " count(*) "

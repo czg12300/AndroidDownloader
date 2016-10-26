@@ -4,7 +4,6 @@ package com.jake.library.db;
 import android.text.TextUtils;
 
 import com.jake.library.DownloadState;
-import com.jake.library.data.db.TableColumns;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,7 +14,16 @@ import org.json.JSONException;
  * @author jakechen
  * @since 2016/7/22
  */
-public class DownloadFile implements TableColumns {
+public class DownloadFile {
+    /**
+     * 创建时间
+     */
+    public static final String CREATE_AT = "create_at";
+
+    /**
+     * 修改时间
+     */
+    public static final String MODIFIED_AT = "modified_at";
 
     /**
      * 下载的文件标识

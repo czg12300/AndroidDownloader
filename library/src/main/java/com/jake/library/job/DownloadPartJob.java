@@ -1,7 +1,6 @@
+package com.jake.library.job;
 
-package com.jake.library;
-
-import com.jake.library.data.http.OkHttpClientManager;
+import com.jake.library.DownloadState;
 import com.jake.library.db.DownloadPart;
 import com.jake.library.db.DownloadPartOperator;
 import com.jake.library.utils.LogUtil;
@@ -11,33 +10,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
-
 /**
- * 描述:子片段下载
- *
- * @author jakechen
- * @since 2016/7/25
+ * Created by jakechen on 2016/10/26.
  */
-public class DownloadPartTask implements Runnable {
+
+public class DownloadPartJob extends BaseJob {
     private DownloadPart mDownloadPart;
 
-    private IDownloadPartListener mIDownloadPartListener;
-
-    private boolean mIsPause = false;
-
-    public DownloadPartTask(DownloadPart part, IDownloadPartListener listener) {
+    public DownloadPartJob(DownloadPart part) {
         mDownloadPart = part;
-        mIDownloadPartListener = listener;
     }
 
     @Override
-    public void run() {
+    protected void runInThread() {
         LogUtil.d("tag  DownloadPartTask   run() ");
-        mIsPause = false;
-        InputStream inputStream = null;
+        InputStream inputStream = ;
         BufferedInputStream bis = null;
         try {
             RandomAccessFile accessFile = new RandomAccessFile(mDownloadPart.path, "rwd");
@@ -105,15 +92,13 @@ public class DownloadPartTask implements Runnable {
         }
     }
 
-    public void pause() {
-        mIsPause = true;
-        mDownloadPart.state = DownloadState.PAUSE;
-        DownloadPartOperator.getInstance().update(mDownloadPart.id, mDownloadPart);
+    public DownloadPart getDownloadPart() {
+        return mDownloadPart;
     }
 
-    public static interface IDownloadPartListener {
-        void downloadChange(DownloadPart part);
-
-        void fail(DownloadPart part);
+    @Override
+    public void stop() {
+        super.stop();
+        DownloadPartOperator.getInstance().update(mDownloadPart.id, mDownloadPart);
     }
 }

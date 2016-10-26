@@ -5,9 +5,6 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.jake.library.DownloadPart;
-import com.jake.library.data.db.BaseDbOperator;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +14,7 @@ import java.util.List;
  * @author jakechen
  * @since 2016/7/22
  */
-public class DownloadPartOperator extends BaseDbOperator<DownloadPart> {
+public class DownloadPartOperator {
     private static DownloadPartOperator mInstance;
 
     public static DownloadPartOperator getInstance() {
@@ -30,17 +27,14 @@ public class DownloadPartOperator extends BaseDbOperator<DownloadPart> {
     private DownloadPartOperator() {
     }
 
-    @Override
-    protected SQLiteDatabase getReadableDatabase() {
+    public SQLiteDatabase getReadableDatabase() {
         return DownloadDbHelper.getInstance().getReadableDatabase();
     }
 
-    @Override
-    protected SQLiteDatabase getWritableDatabase() {
+    public SQLiteDatabase getWritableDatabase() {
         return DownloadDbHelper.getInstance().getWritableDatabase();
     }
 
-    @Override
     public long insert(DownloadPart downloadPart) {
         ContentValues cv = createContentValues(downloadPart);
         long createAt = System.currentTimeMillis();
@@ -55,7 +49,30 @@ public class DownloadPartOperator extends BaseDbOperator<DownloadPart> {
         return result;
     }
 
-    @Override
+    public long insertWithoutTransaction(DownloadPart downloadPart) {
+        ContentValues cv = createContentValues(downloadPart);
+        long createAt = System.currentTimeMillis();
+        cv.put(DownloadPart.CREATE_AT, createAt);
+        cv.put(DownloadPart.MODIFIED_AT, createAt);
+        downloadPart.createAt = createAt;
+        downloadPart.modifyAt = createAt;
+        long result = getWritableDatabase().insert(DownloadPart.TABLE_NAME, null, cv);
+        return result;
+    }
+
+    public void insert(ArrayList<DownloadPart> downloadParts) {
+        if (downloadParts != null && downloadParts.size() > 0) {
+            SQLiteDatabase db = getWritableDatabase();
+            db.beginTransaction();
+            for (DownloadPart part : downloadParts) {
+                if (part != null) {
+                    insertWithoutTransaction(part);
+                }
+            }
+            db.endTransaction();
+        }
+    }
+
     public long update(ContentValues cv, String selection, String[] selectionArgs) {
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
@@ -65,7 +82,6 @@ public class DownloadPartOperator extends BaseDbOperator<DownloadPart> {
         return result;
     }
 
-    @Override
     public long delete(String selection, String[] selectionArgs) {
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
@@ -74,7 +90,6 @@ public class DownloadPartOperator extends BaseDbOperator<DownloadPart> {
         return result;
     }
 
-    @Override
     public List<DownloadPart> query(String selection, String[] selectionArgs, String orderby) {
         List<DownloadPart> result = null;
         Cursor c = null;
@@ -93,7 +108,6 @@ public class DownloadPartOperator extends BaseDbOperator<DownloadPart> {
         return result;
     }
 
-    @Override
     public List<DownloadPart> query(String selection, String[] selectionArgs, String orderby,
                                     int limit) {
         List<DownloadPart> result = null;
@@ -111,7 +125,6 @@ public class DownloadPartOperator extends BaseDbOperator<DownloadPart> {
         return result;
     }
 
-    @Override
     public DownloadPart query(String selection, String[] selectionArgs) {
         List<DownloadPart> files = query(selection, selectionArgs, null);
         if (files != null && files.size() > 0) {
@@ -145,7 +158,6 @@ public class DownloadPartOperator extends BaseDbOperator<DownloadPart> {
         return null;
     }
 
-    @Override
     public int getCount(String selection, String[] selectionArgs) {
         String[] projection = {
                 " count(*) "

@@ -1,9 +1,10 @@
 
-package com.jake.library;
+package com.jake.library.utils;
 
 import android.text.TextUtils;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,15 +14,24 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * File Utils
  *
- * @author Trinea 2012-5-12
+ * @author jake 2012-5-12
  */
-public class FileUtil {
+public class DownloadUtils {
 
     public final static String FILE_EXTENSION_SEPARATOR = ".";
 
@@ -69,8 +79,8 @@ public class FileUtil {
      *
      * @param filePath
      * @param content
-     * @param append is append, if true, write to the end of file, else clear
-     *            content of file and write into it
+     * @param append   is append, if true, write to the end of file, else clear
+     *                 content of file and write into it
      * @return return true
      * @throws IOException if an error occurs while operator FileWriter
      */
@@ -96,7 +106,7 @@ public class FileUtil {
 
     /**
      * write file
-     * 
+     *
      * @param filePath
      * @param stream
      * @return return true
@@ -131,7 +141,7 @@ public class FileUtil {
 
     /**
      * read file to string list, a element of list is a line
-     * 
+     *
      * @param filePath
      * @return if file not exist, return null, else return content of file
      * @throws IOException if an error occurs while operator BufferedReader
@@ -198,7 +208,7 @@ public class FileUtil {
 
     /**
      * get file name from path, not include suffix
-     * 
+     * <p>
      * <pre>
      *      getFileNameWithoutExtension(null)               =   null
      *      getFileNameWithoutExtension("")                 =   ""
@@ -213,7 +223,7 @@ public class FileUtil {
      *      getFileNameWithoutExtension("/home/admin")      =   "admin"
      *      getFileNameWithoutExtension("/home/admin/a.txt/b.mp3")  =   "b"
      * </pre>
-     * 
+     *
      * @param filePath
      * @return file name from path, not include suffix
      * @see
@@ -237,7 +247,7 @@ public class FileUtil {
 
     /**
      * get file name from path, include suffix
-     * 
+     * <p>
      * <pre>
      *      getFileName(null)               =   null
      *      getFileName("")                 =   ""
@@ -252,7 +262,7 @@ public class FileUtil {
      *      getFileName("/home/admin")      =   "admin"
      *      getFileName("/home/admin/a.txt/b.mp3")  =   "b.mp3"
      * </pre>
-     * 
+     *
      * @param filePath
      * @return file name from path, include suffix
      */
@@ -267,7 +277,7 @@ public class FileUtil {
 
     /**
      * get folder name from path
-     * 
+     * <p>
      * <pre>
      *      getFolderName(null)               =   null
      *      getFolderName("")                 =   ""
@@ -283,7 +293,7 @@ public class FileUtil {
      *      getFolderName("/home/admin")      =   "/home"
      *      getFolderName("/home/admin/a.txt/b.mp3")  =   "/home/admin/a.txt"
      * </pre>
-     * 
+     *
      * @param filePath
      * @return
      */
@@ -299,7 +309,7 @@ public class FileUtil {
 
     /**
      * get suffix of file from path
-     * 
+     * <p>
      * <pre>
      *      getFileExtension(null)               =   ""
      *      getFileExtension("")                 =   ""
@@ -315,7 +325,7 @@ public class FileUtil {
      *      getFileExtension("/home/admin/a.txt/b")  =   ""
      *      getFileExtension("/home/admin/a.txt/b.mp3")  =   "mp3"
      * </pre>
-     * 
+     *
      * @param filePath
      * @return
      */
@@ -341,16 +351,16 @@ public class FileUtil {
      * <li>makeDirs("C:\\Users\\Trinea") can only create users folder</li>
      * <li>makeFolder("C:\\Users\\Trinea\\") can create Trinea folder</li>
      * </ul>
-     * 
+     *
      * @param filePath
      * @return true if the necessary directories have been created or the target
-     *         directory already exists, false one of the directories can not be
-     *         created.
-     *         <ul>
-     *         <li>if {@link FileUtil#getFolderName(String)} return null, return
-     *         false</li>
-     *         <li>if target directory already exists, return true</li>
-     *         </ul>
+     * directory already exists, false one of the directories can not be
+     * created.
+     * <ul>
+     * <li>if {@link DownloadUtils#getFolderName(String)} return null, return
+     * false</li>
+     * <li>if target directory already exists, return true</li>
+     * </ul>
      */
     public static boolean createFolder(String filePath, boolean recreate) {
         String folderName = getFolderName(filePath);
@@ -381,7 +391,7 @@ public class FileUtil {
 
     /**
      * Indicates if this file represents a file on the underlying file system.
-     * 
+     *
      * @param filePath
      * @return
      */
@@ -397,7 +407,7 @@ public class FileUtil {
     /**
      * Indicates if this file represents a directory on the underlying file
      * system.
-     * 
+     *
      * @param directoryPath
      * @return
      */
@@ -417,7 +427,7 @@ public class FileUtil {
      * <li>if path not exist, return true</li>
      * <li>if path exist, delete recursion. return true</li>
      * <ul>
-     * 
+     *
      * @param path
      * @return
      */
@@ -452,7 +462,7 @@ public class FileUtil {
      * <li>if path is null or empty, return -1</li>
      * <li>if path exist and it is a file, return file size, else return -1</li>
      * <ul>
-     * 
+     *
      * @param path
      * @return
      */
@@ -467,7 +477,7 @@ public class FileUtil {
 
     /**
      * 重命名文件/文件夹
-     * 
+     *
      * @param path
      * @param newName
      */
@@ -489,7 +499,7 @@ public class FileUtil {
 
     /**
      * 读取文件
-     * 
+     *
      * @param filePath
      * @return 输入流
      */
@@ -514,7 +524,7 @@ public class FileUtil {
 
     /**
      * 创建一个空的文件
-     * 
+     *
      * @param filePath
      * @param recreate 是否删除重建
      * @return
@@ -542,6 +552,174 @@ public class FileUtil {
             return false;
         }
         return true;
+    }
+
+    /**
+     * 获取MD5
+     *
+     * @param input 字符串
+     * @return
+     */
+    public static String getMd5(String input) {
+        try {
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            md5.update(input.getBytes());
+            return toHexString(md5.digest());
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * 获取MD5
+     *
+     * @param input  字符串
+     * @param encode 编码
+     * @return
+     */
+    public static String getMd5(String input, String encode) {
+        try {
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            md5.update(input.getBytes(encode));
+            return toHexString(md5.digest());
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * 获取MD5
+     *
+     * @param input
+     * @return
+     */
+    public static String getMd5(byte[] input) {
+        try {
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            md5.update(input);
+            return toHexString(md5.digest());
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * byte数组转成十六进制字符串
+     *
+     * @param b
+     * @return
+     * @throws Exception
+     */
+    public static String toHexString(byte[] b) {
+        StringBuilder sb = new StringBuilder(b.length * 2);
+        for (int i = 0; i < b.length; i++) {
+            sb.append(hexChar[(b[i] & 0xf0) >>> 4]);
+            sb.append(hexChar[b[i] & 0x0f]);
+        }
+        return sb.toString();
+    }
+
+    private static char[] hexChar = {
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+    };
+
+    private static final String HEX_NUMS_STR = "0123456789ABCDEF";
+
+    /**
+     * 将16进制字符串转换成字节数组
+     *
+     * @param hex
+     * @return
+     */
+    public static byte[] hexStringToByte(String hex) {
+        int len = (hex.length() / 2);
+        byte[] result = new byte[len];
+        char[] hexChars = hex.toCharArray();
+        for (int i = 0; i < len; i++) {
+            int pos = i * 2;
+            result[i] = (byte) (HEX_NUMS_STR.indexOf(hexChars[pos]) << 4 | HEX_NUMS_STR
+                    .indexOf(hexChars[pos + 1]));
+        }
+        return result;
+    }
+
+    /**
+     * 根据url获取文件名
+     *
+     * @param url
+     * @return
+     */
+    public synchronized static String formatFileNameByUrl(String url) {
+        if (url != null && url.contains("/")) {
+            return url.substring(url.lastIndexOf("/"));
+        }
+        return url;
+    }
+
+    /**
+     * 获取默认线程池
+     *
+     * @return
+     */
+    public static ExecutorService getDownloadDefaultThreadExecutor() {
+        // 线程池核心线程数
+        final int corePoolSize = 5;
+        // 线程池最大线程数
+        final int maximumPoolSize = 100;
+        // 额外线程空状态生存时间
+        final int keepAliveTime = 10000;
+        return new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(10), new ThreadFactory() {
+            private final AtomicInteger integer = new AtomicInteger();
+
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, "myThreadPool thread:" + integer.getAndIncrement());
+            }
+        });
+    }
+
+    /**
+     * 作为数据库保存的唯一标识
+     *
+     * @param url
+     * @return
+     */
+    public synchronized static String getKey(String url) {
+        return DownloadUtils.getMd5(url);
+    }
+
+    /**
+     * 关闭io
+     *
+     * @param closeable
+     */
+    public static void closeIO(Closeable closeable) {
+        try {
+            if (closeable != null) {
+                closeable.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static long getContentLengthByURL(URL url) {
+        int result = 0;
+        if (url != null) {
+            try {
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(2500);
+                conn.setReadTimeout(2500);
+                conn.setUseCaches(false);
+                conn.setDoInput(true);
+                conn.connect();
+                result = conn.getContentLength();
+                conn.disconnect();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return result;
     }
 
 }

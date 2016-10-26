@@ -1,7 +1,8 @@
 
-package com.jake.library;
+package com.jake.library.db;
 
-import com.jake.library.data.db.TableColumns;
+
+import com.jake.library.DownloadState;
 
 /**
  * 描述:下载片段
@@ -9,7 +10,16 @@ import com.jake.library.data.db.TableColumns;
  * @author jakechen
  * @since 2016/7/29
  */
-public class DownloadPart implements TableColumns {
+public class DownloadPart {
+    /**
+     * 创建时间
+     */
+    public static final String CREATE_AT = "create_at";
+
+    /**
+     * 修改时间
+     */
+    public static final String MODIFIED_AT = "modified_at";
     public static final String ID = "file_part_id";
 
     public static final String RANGE_START = "range_start";
