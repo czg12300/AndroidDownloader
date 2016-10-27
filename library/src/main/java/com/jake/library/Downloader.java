@@ -47,6 +47,7 @@ public class Downloader {
         if (context == null) {
             throw new NullPointerException("Downloader call install context is null");
         }
+        DLog.setIsOpenLog(false);
         DownloadDbHelper.install(context);
         mInstance = new Downloader();
         if (configuration == null) {

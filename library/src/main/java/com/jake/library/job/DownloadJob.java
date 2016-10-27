@@ -97,6 +97,7 @@ public class DownloadJob extends BaseJob {
             for (DownloadPart part : downloadParts) {
                 if (part != null && !part.isFinish()) {
                     DownloadPartJob job = new DownloadPartJob(part);
+                    job.start();
                     mDownloadPartJobs.add(job);
                     getDownloadConfiguration().getExecutorService().execute(job);
                 }
@@ -134,20 +135,18 @@ public class DownloadJob extends BaseJob {
                 if (isFinish) {
                     downloadFile.state = DownloadState.FINISH;
                 }
-                //更新数据库
-                DownloadFileOperator.getInstance().update(mKey.getKey(), downloadFile);
             }
+            //更新数据库
+            DownloadFileOperator.getInstance().update(mKey.getKey(), downloadFile);
             onProgress(mKey.getUrl(), downloadFile.positionSize, downloadFile.totalSize);
             if (mDownloadPartJobs != null && mDownloadPartJobs.size() > 0) {
-                CopyOnWriteArrayList<DownloadPartJob> list = (CopyOnWriteArrayList<DownloadPartJob>) mDownloadPartJobs.clone();
-                for (DownloadPartJob job : list) {
+                for (DownloadPartJob job : mDownloadPartJobs) {
                     if (job != null) {
                         if (job.getDownloadPart().isFinish() || job.isStop()) {
                             mDownloadPartJobs.remove(job);
                         }
                     }
                 }
-                list.clear();
             }
             try {
                 Thread.sleep(300);
