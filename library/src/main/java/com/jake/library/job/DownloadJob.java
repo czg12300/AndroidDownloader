@@ -19,6 +19,7 @@ import com.jake.library.db.DownloadPartOperator;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 描述:下载任务
@@ -29,8 +30,8 @@ import java.util.ArrayList;
 public class DownloadJob extends BaseJob {
 
     private Handler mHandler = new Handler(Looper.getMainLooper());
-
-    private ArrayList<DownloadPartJob> mDownloadPartJobs;
+    //线程安全的list
+    private CopyOnWriteArrayList<DownloadPartJob> mDownloadPartJobs;
     private DownloadKey mKey;
 
     public DownloadJob(DownloadKey key) {
@@ -58,7 +59,7 @@ public class DownloadJob extends BaseJob {
 
             } else {
                 if (downloadFile.partIds != null && downloadFile.partIds.length > 0) {
-                    ArrayList<DownloadPart> downloadParts = queryDownloadByPartIds(downloadFile.partIds);
+                    ArrayList<DownloadPart> downloadParts = queryDownloadByPartIds(downloadFile.id);
                     downloadParts(downloadParts);
                 } else {
                     DownloadFileOperator.getInstance().delete(mKey.getKey());
@@ -74,23 +75,13 @@ public class DownloadJob extends BaseJob {
     /**
      * 通过partIds下载
      *
-     * @param partIds
+     * @param fileId
      */
-    private ArrayList<DownloadPart> queryDownloadByPartIds(String[] partIds) {
-        if (partIds == null || partIds.length == 0) {
+    private ArrayList<DownloadPart> queryDownloadByPartIds(String fileId) {
+        if (TextUtils.isEmpty(fileId)) {
             return null;
         }
-        ArrayList<DownloadPart> downloadParts = new ArrayList<>();
-        for (int i = 0; i < partIds.length; i++) {
-            final String partId = partIds[i];
-            if (!TextUtils.isEmpty(partId)) {
-                DownloadPart part = DownloadPartOperator.getInstance().query(partId);
-                if (part != null) {
-                    downloadParts.add(part);
-                }
-            }
-        }
-        return downloadParts;
+        return DownloadPartOperator.getInstance().queryList(fileId);
     }
 
     /**
@@ -101,7 +92,7 @@ public class DownloadJob extends BaseJob {
     private void downloadParts(ArrayList<DownloadPart> downloadParts) {
         if (downloadParts != null && downloadParts.size() > 0) {
             if (mDownloadPartJobs == null) {
-                mDownloadPartJobs = new ArrayList<>();
+                mDownloadPartJobs = new CopyOnWriteArrayList<>();
             }
             for (DownloadPart part : downloadParts) {
                 if (part != null && !part.isFinish()) {
@@ -119,18 +110,13 @@ public class DownloadJob extends BaseJob {
      * 监听下载进度
      */
     private void watchDownloadProgress() {
-        while (mDownloadPartJobs != null && mDownloadPartJobs.size() > 0 && !isStop()) {
-            try {
-                Thread.sleep(300);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        do {
             DownloadFile downloadFile = DownloadFileOperator.getInstance().query(mKey.getKey());
             if (downloadFile == null) {
                 onFail(mKey.getUrl());
                 return;
             }
-            ArrayList<DownloadPart> downloadParts = queryDownloadByPartIds(downloadFile.partIds);
+            ArrayList<DownloadPart> downloadParts = queryDownloadByPartIds(downloadFile.id);
             if (downloadParts != null) {
                 boolean isFinish = true;
                 long temp = 0;
@@ -148,24 +134,33 @@ public class DownloadJob extends BaseJob {
                 if (isFinish) {
                     downloadFile.state = DownloadState.FINISH;
                 }
+                //更新数据库
+                DownloadFileOperator.getInstance().update(mKey.getKey(), downloadFile);
             }
             onProgress(mKey.getUrl(), downloadFile.positionSize, downloadFile.totalSize);
-            //更新数据库
-            DownloadFileOperator.getInstance().update(downloadFile);
-            for (DownloadPartJob job : mDownloadPartJobs) {
-                if (job != null) {
-                    if (job.getDownloadPart().isFinish() || job.isStop()) {
-                        mDownloadPartJobs.remove(job);
+            if (mDownloadPartJobs != null && mDownloadPartJobs.size() > 0) {
+                CopyOnWriteArrayList<DownloadPartJob> list = (CopyOnWriteArrayList<DownloadPartJob>) mDownloadPartJobs.clone();
+                for (DownloadPartJob job : list) {
+                    if (job != null) {
+                        if (job.getDownloadPart().isFinish() || job.isStop()) {
+                            mDownloadPartJobs.remove(job);
+                        }
                     }
                 }
+                list.clear();
             }
-        }
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        } while (mDownloadPartJobs != null && mDownloadPartJobs.size() > 0 && !isStop());
         DownloadFile downloadFile = DownloadFileOperator.getInstance().query(mKey.getKey());
         if (isStop()) {
             onStop(mKey.getUrl());
             if (downloadFile != null) {
                 downloadFile.state = DownloadState.STOP;
-                DownloadFileOperator.getInstance().update(downloadFile);
+                DownloadFileOperator.getInstance().update(mKey.getKey(), downloadFile);
             }
         } else {
             if (downloadFile != null && downloadFile.isFinish()) {
@@ -184,7 +179,7 @@ public class DownloadJob extends BaseJob {
         long totalSize = DownloadUtils.getContentLengthByURL(mKey.getURL());
         if (totalSize > 0) {
             final String fileId = mKey.getKey();
-            final String downloadPath = getDownloadConfiguration().getDownloadDir() + File.separator + getDownloadConfiguration().getFileNameGenerator().name(mKey.getUrl());
+            final String downloadPath = mKey.getFilePath();
             int partCount = getPartCount(totalSize);
             int temp = (int) (totalSize / partCount);
             String[] partIds = new String[partCount];
@@ -226,9 +221,9 @@ public class DownloadJob extends BaseJob {
      */
     private DownloadFile createDownloadFile(String fileId, String downloadPath, long fileSize, String[] partIds) {
         DownloadFile downloadFile = new DownloadFile();
-        downloadFile.id = mKey.getKey();
+        downloadFile.id = fileId;
         downloadFile.path = downloadPath;
-        downloadFile.url = fileId;
+        downloadFile.url = mKey.getUrl();
         downloadFile.positionSize = 0;
         downloadFile.state = DownloadState.START;
         downloadFile.totalSize = fileSize;

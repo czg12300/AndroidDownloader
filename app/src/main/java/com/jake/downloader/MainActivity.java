@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity implements IDownloadListener
             Button btn = (Button) item.findViewById(R.id.btn_opt);
             FileInfo info = (FileInfo) btn.getTag();
             if (TextUtils.equals(info.url, url)) {
-                btn.setTextColor(Color.parseColor("#eee"));
+                btn.setTextColor(Color.parseColor("#eeeeee"));
                 btn.setText("完成");
                 return;
             }
@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements IDownloadListener
             Button btn = (Button) item.findViewById(R.id.btn_opt);
             FileInfo info = (FileInfo) btn.getTag();
             if (TextUtils.equals(info.url, url)) {
-                btn.setTextColor(Color.parseColor("#eee"));
+                btn.setTextColor(Color.parseColor("#eeeeee"));
                 btn.setText("停止");
                 return;
             }

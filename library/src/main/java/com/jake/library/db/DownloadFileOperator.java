@@ -38,49 +38,26 @@ public class DownloadFileOperator {
     }
 
     public long insert(DownloadFile downloadFile) {
+        return insert(getWritableDatabase(), downloadFile);
+    }
+
+    public long insert(SQLiteDatabase db, DownloadFile downloadFile) {
         ContentValues cv = createContentValues(downloadFile);
         long createAt = System.currentTimeMillis();
         cv.put(DownloadFile.CREATE_AT, createAt);
         cv.put(DownloadFile.MODIFIED_AT, createAt);
         downloadFile.createAt = createAt;
         downloadFile.modifyAt = createAt;
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
-        long result = db.insert(DownloadFile.TABLE_NAME, null, cv);
-        db.endTransaction();
-        return result;
+        return db.insert(DownloadFile.TABLE_NAME, null, cv);
     }
 
     public long update(ContentValues cv, String selection, String[] selectionArgs) {
-        long result = 0;
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
-        result = db.update(DownloadFile.TABLE_NAME, cv, selection, selectionArgs);
-        db.endTransaction();
-        return result;
+        return getWritableDatabase().update(DownloadFile.TABLE_NAME, cv, selection, selectionArgs);
     }
 
-    public long update(DownloadFile downloadFile) {
-        long result = 0;
-        ContentValues cv = createContentValues(downloadFile);
-        long createAt = System.currentTimeMillis();
-        cv.put(DownloadFile.CREATE_AT, createAt);
-        cv.put(DownloadFile.MODIFIED_AT, createAt);
-        downloadFile.createAt = createAt;
-        downloadFile.modifyAt = createAt;
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
-        result = db.update(DownloadFile.TABLE_NAME, cv, null, null);
-        db.endTransaction();
-        return result;
-    }
 
     public long delete(String selection, String[] selectionArgs) {
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
-        long result = db.delete(DownloadFile.TABLE_NAME, selection, selectionArgs);
-        db.endTransaction();
-        return result;
+        return getWritableDatabase().delete(DownloadFile.TABLE_NAME, selection, selectionArgs);
     }
 
     public List<DownloadFile> query(String selection, String[] selectionArgs, String orderby) {

@@ -44,11 +44,7 @@ public class DownloadPartOperator {
         cv.put(DownloadPart.MODIFIED_AT, createAt);
         downloadPart.createAt = createAt;
         downloadPart.modifyAt = createAt;
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
-        long result = db.insert(DownloadPart.TABLE_NAME, null, cv);
-        db.endTransaction();
-        return result;
+        return getWritableDatabase().insert(DownloadPart.TABLE_NAME, null, cv);
     }
 
     public long insertWithoutTransaction(SQLiteDatabase db, DownloadPart downloadPart) {
@@ -65,34 +61,24 @@ public class DownloadPartOperator {
     public void insert(ArrayList<DownloadPart> downloadParts) {
         if (downloadParts != null && downloadParts.size() > 0) {
             SQLiteDatabase db = getWritableDatabase();
-            db.beginTransaction();
             for (DownloadPart part : downloadParts) {
                 if (part != null) {
                     insertWithoutTransaction(db, part);
                 }
             }
-            db.endTransaction();
         }
     }
 
     public long update(ContentValues cv, String selection, String[] selectionArgs) {
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
-        long result = db.update(DownloadPart.TABLE_NAME, cv, selection, selectionArgs);
-        db.endTransaction();
-        return result;
+        return getWritableDatabase().update(DownloadPart.TABLE_NAME, cv, selection, selectionArgs);
     }
 
     public long delete(String selection, String[] selectionArgs) {
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
-        long result = db.delete(DownloadPart.TABLE_NAME, selection, selectionArgs);
-        db.endTransaction();
-        return result;
+        return getWritableDatabase().delete(DownloadPart.TABLE_NAME, selection, selectionArgs);
     }
 
-    public List<DownloadPart> query(String selection, String[] selectionArgs, String orderby) {
-        List<DownloadPart> result = null;
+    public ArrayList<DownloadPart> query(String selection, String[] selectionArgs, String orderby) {
+        ArrayList<DownloadPart> result = null;
         Cursor c = null;
         try {
             c = getReadableDatabase().query(DownloadPart.TABLE_NAME, null, selection, selectionArgs, null, null, orderby);
@@ -131,9 +117,9 @@ public class DownloadPartOperator {
         return null;
     }
 
-    private List<DownloadPart> getDownloadPartFromCursor(Cursor c) {
+    private ArrayList<DownloadPart> getDownloadPartFromCursor(Cursor c) {
         if (c != null) {
-            List<DownloadPart> result = new ArrayList<>();
+            ArrayList<DownloadPart> result = new ArrayList<>();
             DownloadPart file = null;
             for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
                 file = new DownloadPart();
@@ -228,7 +214,7 @@ public class DownloadPartOperator {
         return query(selection, selectionArgs);
     }
 
-    public List<DownloadPart> queryList(String fileId) {
+    public ArrayList<DownloadPart> queryList(String fileId) {
         String selection = DownloadPart.FILE_ID + " = ? ";
         String[] selectionArgs = {
                 fileId

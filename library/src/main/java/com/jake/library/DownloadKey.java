@@ -15,6 +15,7 @@ public class DownloadKey {
     private URL mURL;
     private String mKey;
     private String mUrl;
+    private String mFilePath;
 
     /**
      * 用于创建对象
@@ -22,19 +23,25 @@ public class DownloadKey {
      * @param url
      * @return
      */
-    public static DownloadKey create(String url) {
-        return new DownloadKey(url);
+
+    public static DownloadKey create(String url, String filePath) {
+        return new DownloadKey(url, filePath);
     }
 
-    private DownloadKey(String url) {
+    private DownloadKey(String url, String filePath) {
         if (!TextUtils.isEmpty(url)) {
             mUrl = url;
+            mFilePath = filePath;
             try {
                 mURL = new URL(url);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
-            mKey = DownloadUtils.getKey(url);
+            if (TextUtils.isEmpty(filePath)) {
+                mKey = DownloadUtils.getKey(url);
+            } else {
+                mKey = DownloadUtils.getKey(url + filePath);
+            }
         } else {
             throw new NullPointerException(" url is null");
         }
@@ -50,5 +57,9 @@ public class DownloadKey {
 
     public String getKey() {
         return mKey;
+    }
+
+    public String getFilePath() {
+        return mFilePath;
     }
 }

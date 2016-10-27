@@ -59,12 +59,12 @@ public class DownloadAdapter extends BaseListAdapter<FileInfo, DownloadAdapter.V
                         if (!info.isDownloading) {
                             btnOpt.setText("暂停");
                             btnOpt.setTextColor(Color.parseColor("#FF4081"));
-                            Downloader.getInstance().download(info.url);
+                            Downloader.getInstance().download(info.url, info.name + ".apk", null);
                             info.isDownloading = true;
                         } else {
                             btnOpt.setText("继续");
                             btnOpt.setTextColor(Color.parseColor("#333333"));
-                            Downloader.getInstance().stop(info.url);
+                            Downloader.getInstance().stop(info.url, info.name + ".apk", null);
                             info.isDownloading = false;
                         }
                     }
