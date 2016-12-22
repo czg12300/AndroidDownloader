@@ -1,4 +1,4 @@
-package com.jake.library.datafetcher;
+package com.jake.library.datafetch;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -8,7 +8,7 @@ import java.net.URL;
  * Created by jakechen on 2016/10/26.
  */
 
-public interface IDownloadDataFetcher {
+public interface DownloadDataFetch {
     InputStream loadData(URL url, long start, long end) throws Exception;
     void cleanup();
 }

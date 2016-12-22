@@ -2,15 +2,16 @@
 package com.jake.library;
 
 import android.content.Context;
-import android.database.Cursor;
 import android.text.TextUtils;
 
-import com.jake.library.datafetcher.HttpURLConnectionDataFetcher;
+import com.jake.library.datafetch.HttpURLConnectionDataFetch;
+import com.jake.library.datafetch.HttpURLConnectionDataFetchLoader;
 import com.jake.library.db.DownloadDbHelper;
 import com.jake.library.db.DownloadFile;
 import com.jake.library.db.DownloadFileOperator;
 import com.jake.library.db.DownloadPartOperator;
 import com.jake.library.filenamegenerator.UrlFileNameGenerator;
+import com.jake.library.filenamegenerator.UrlFileNameGeneratorLoader;
 import com.jake.library.job.DownloadJob;
 import com.jake.library.utils.DLog;
 import com.jake.library.utils.DownloadUtils;
@@ -60,8 +61,8 @@ public class Downloader {
         DownloadConfiguration.Builder builder = new DownloadConfiguration.Builder();
         builder.setThreadExecutor(DownloadUtils.getDownloadDefaultThreadExecutor());
         builder.setDownloadDir(context.getFilesDir().getAbsolutePath());
-        builder.setFileNameGenerator(UrlFileNameGenerator.class);
-        builder.setDownloadDataFetcher(HttpURLConnectionDataFetcher.class);
+        builder.setFileNameGeneratorLoader(new UrlFileNameGeneratorLoader());
+        builder.setDownloadDataFetchLoader(new HttpURLConnectionDataFetchLoader());
         return builder.build();
     }
 

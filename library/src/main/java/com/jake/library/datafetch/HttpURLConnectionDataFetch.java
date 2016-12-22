@@ -1,4 +1,4 @@
-package com.jake.library.datafetcher;
+package com.jake.library.datafetch;
 
 import android.text.TextUtils;
 
@@ -7,14 +7,13 @@ import com.jake.library.utils.DownloadUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.URISyntaxException;
 import java.net.URL;
 
 /**
  * Created by jakechen on 2016/10/26.
  */
 
-public class HttpURLConnectionDataFetcher implements IDownloadDataFetcher {
+public class HttpURLConnectionDataFetch implements DownloadDataFetch {
 
     private HttpURLConnection urlConnection;
     private InputStream stream;

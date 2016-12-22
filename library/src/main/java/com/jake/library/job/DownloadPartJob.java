@@ -2,7 +2,7 @@ package com.jake.library.job;
 
 import com.jake.library.DownloadState;
 import com.jake.library.Downloader;
-import com.jake.library.datafetcher.IDownloadDataFetcher;
+import com.jake.library.datafetch.DownloadDataFetch;
 import com.jake.library.db.DownloadPart;
 import com.jake.library.db.DownloadPartOperator;
 import com.jake.library.utils.DownloadUtils;
@@ -27,10 +27,10 @@ public class DownloadPartJob extends BaseJob {
     @Override
     protected void runInThread() {
         DLog.d("tag  DownloadPartTask   run() ");
-        IDownloadDataFetcher dataFetcher = null;
+        DownloadDataFetch dataFetcher = null;
         BufferedInputStream bis = null;
         try {
-            dataFetcher = Downloader.getInstance().getConfiguration().getDataFetcher();
+            dataFetcher = Downloader.getInstance().getConfiguration().getDataFetch();
             URL url = new URL(mDownloadPart.url);
             RandomAccessFile accessFile = new RandomAccessFile(mDownloadPart.path, "rwd");
             accessFile.seek(mDownloadPart.rangeStart);

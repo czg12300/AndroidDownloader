@@ -2,10 +2,13 @@ package com.jake.library;
 
 import android.text.TextUtils;
 
-import com.jake.library.datafetcher.HttpURLConnectionDataFetcher;
-import com.jake.library.datafetcher.IDownloadDataFetcher;
-import com.jake.library.filenamegenerator.IFileNameGenerator;
+import com.jake.library.datafetch.DownloadDataFetch;
+import com.jake.library.datafetch.DownloadDataFetchLoader;
+import com.jake.library.datafetch.HttpURLConnectionDataFetchLoader;
+import com.jake.library.filenamegenerator.FileNameGenerator;
+import com.jake.library.filenamegenerator.FileNameGeneratorLoader;
 import com.jake.library.filenamegenerator.UrlFileNameGenerator;
+import com.jake.library.filenamegenerator.UrlFileNameGeneratorLoader;
 import com.jake.library.utils.DownloadUtils;
 
 import java.util.concurrent.ExecutorService;
@@ -17,8 +20,8 @@ import java.util.concurrent.ExecutorService;
 public class DownloadConfiguration {
     private ExecutorService mExecutor;
     private String mDownloadDir;
-    private Class<? extends IFileNameGenerator> mFileNameGenerator;
-    private Class<? extends IDownloadDataFetcher> mDataFetcher;
+    private FileNameGeneratorLoader mFileNameGeneratorLoader;
+    private DownloadDataFetchLoader mDataFetchLoader;
 
     public ExecutorService getExecutorService() {
         return mExecutor;
@@ -28,28 +31,12 @@ public class DownloadConfiguration {
         return mDownloadDir;
     }
 
-    public IFileNameGenerator getFileNameGenerator() {
-        IFileNameGenerator fileNameGenerator = null;
-        try {
-            fileNameGenerator = mFileNameGenerator.newInstance();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return fileNameGenerator;
+    public FileNameGenerator getFileNameGenerator() {
+        return mFileNameGeneratorLoader.getFileNameGenerator();
     }
 
-    public IDownloadDataFetcher getDataFetcher() {
-        IDownloadDataFetcher dataFetcher = null;
-        try {
-            dataFetcher = mDataFetcher.newInstance();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return dataFetcher;
+    public DownloadDataFetch getDataFetch() {
+        return mDataFetchLoader.getDataFetch();
     }
 
     public static class Builder {
@@ -69,13 +56,13 @@ public class DownloadConfiguration {
             return this;
         }
 
-        public Builder setFileNameGenerator(Class<? extends IFileNameGenerator> fileNameGenerator) {
-            mDownloadConfiguration.mFileNameGenerator = fileNameGenerator;
+        public Builder setFileNameGeneratorLoader(FileNameGeneratorLoader loader) {
+            mDownloadConfiguration.mFileNameGeneratorLoader = loader;
             return this;
         }
 
-        public Builder setDownloadDataFetcher(Class<? extends IDownloadDataFetcher> dataFetcher) {
-            mDownloadConfiguration.mDataFetcher = dataFetcher;
+        public Builder setDownloadDataFetchLoader(DownloadDataFetchLoader dataFetchLoader) {
+            mDownloadConfiguration.mDataFetchLoader = dataFetchLoader;
             return this;
         }
 
@@ -83,11 +70,11 @@ public class DownloadConfiguration {
             if (mDownloadConfiguration.mExecutor == null) {
                 mDownloadConfiguration.mExecutor = DownloadUtils.getDownloadDefaultThreadExecutor();
             }
-            if (mDownloadConfiguration.mFileNameGenerator == null) {
-                mDownloadConfiguration.mFileNameGenerator = UrlFileNameGenerator.class;
+            if (mDownloadConfiguration.mFileNameGeneratorLoader == null) {
+                mDownloadConfiguration.mFileNameGeneratorLoader = new UrlFileNameGeneratorLoader();
             }
-            if (mDownloadConfiguration.mDataFetcher == null) {
-                mDownloadConfiguration.mDataFetcher = HttpURLConnectionDataFetcher.class;
+            if (mDownloadConfiguration.mDataFetchLoader == null) {
+                mDownloadConfiguration.mDataFetchLoader = new HttpURLConnectionDataFetchLoader();
             }
             if (TextUtils.isEmpty(mDownloadConfiguration.mDownloadDir)) {
                 throw new IllegalArgumentException("please setup a legal download directory");
